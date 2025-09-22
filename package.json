@@ -1,0 +1,15 @@
+{
+  "name": "@yrncskn/imageslider",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@types/react": "^19.1.13",
+    "@types/react-native": "^0.72.8"
+  }
+}
