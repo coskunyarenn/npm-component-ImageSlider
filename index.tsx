@@ -7,6 +7,8 @@ import {
   Dimensions,
   Image,
   TouchableOpacity,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
 } from "react-native";
 
 interface ImageItem {
@@ -20,11 +22,12 @@ interface ImageSliderProps {
   dotpagination?: boolean;
   numberpagination?: boolean;
   haveArrows?: boolean;
+  showIndexCounter?: boolean;
 }
 
 const { width } = Dimensions.get("window");
-const slideWidth = width * 0.8; // Her slide ekranın %80'i
-const spacing = 16; // Resimler arası boşluk
+const slideWidth = width * 1;
+const spacing = 16;
 
 const ImageSliderComponent: React.FC<ImageSliderProps> = ({
   images,
@@ -32,32 +35,53 @@ const ImageSliderComponent: React.FC<ImageSliderProps> = ({
   dotpagination,
   numberpagination,
   haveArrows,
+  showIndexCounter = false,
 }) => {
   const scrollRef = useRef<ScrollView>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  // Auto-play
+  const loopImages = [images[images.length - 1], ...images, images[0]];
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ x: slideWidth + spacing, animated: false });
+    setCurrentIndex(0);
+  }, []);
+
   useEffect(() => {
     if (!autoPlay) return;
 
     const interval = setInterval(() => {
-      setCurrentIndex((prev) => {
-        const nextIndex = (prev + 1) % images.length;
-        scrollRef.current?.scrollTo({
-          x: nextIndex * (slideWidth + spacing),
-          animated: true,
-        });
-        return nextIndex;
-      });
-    }, 15000);
+      scrollToIndex(currentIndex + 1);
+    }, 5000);
 
     return () => clearInterval(interval);
-  }, [autoPlay, images.length]);
+  }, [autoPlay, currentIndex]);
 
-  // Scroll bittiğinde index güncelle
-  const onMomentumScrollEnd = (event: any) => {
+  const scrollToIndex = (index: number) => {
+    scrollRef.current?.scrollTo({
+      x: (index + 1) * (slideWidth + spacing),
+      animated: true,
+    });
+    setCurrentIndex((index + images.length) % images.length);
+  };
+
+  const onMomentumScrollEnd = (
+    event: NativeSyntheticEvent<NativeScrollEvent>
+  ) => {
     const offsetX = event.nativeEvent.contentOffset.x;
-    const index = Math.round(offsetX / (slideWidth + spacing));
+    let index = Math.round(offsetX / (slideWidth + spacing)) - 1;
+
+    if (index < 0) {
+      scrollRef.current?.scrollTo({
+        x: images.length * (slideWidth + spacing),
+        animated: false,
+      });
+      index = images.length - 1;
+    } else if (index >= images.length) {
+      scrollRef.current?.scrollTo({ x: slideWidth + spacing, animated: false });
+      index = 0;
+    }
+
     setCurrentIndex(index);
   };
 
@@ -72,43 +96,37 @@ const ImageSliderComponent: React.FC<ImageSliderProps> = ({
         onMomentumScrollEnd={onMomentumScrollEnd}
         contentContainerStyle={{ paddingHorizontal: (width - slideWidth) / 2 }}
       >
-        {images.map((img) => (
-          <View
-            key={img.id}
-            style={{ width: slideWidth, marginRight: spacing }}
-          >
+        {loopImages.map((img, idx) => (
+          <View key={idx} style={{ width: slideWidth, marginRight: spacing }}>
             <Image source={{ uri: img.images }} style={styles.image} />
+            {/* <Image source={require(img.images)} style={styles.image} /> */}
+
+            {/* <Image
+              source={require('../assets/430x224.png')}
+              style={styles.image}
+            /> */}
           </View>
         ))}
       </ScrollView>
+      {showIndexCounter && (
+        <View style={styles.indexCounterContainer}>
+          <Text style={styles.indexCounterText}>
+            {currentIndex + 1} / {images.length}
+          </Text>
+        </View>
+      )}
+
       {haveArrows && (
         <View style={styles.arrowsButtonContainer}>
-          <TouchableOpacity
-            onPress={() => {
-              const nextIndex = (currentIndex - 1) % images.length;
-              setCurrentIndex(nextIndex);
-              scrollRef.current?.scrollTo({
-                x: nextIndex * (slideWidth + spacing),
-                animated: true,
-              });
-            }}
-          >
+          <TouchableOpacity onPress={() => scrollToIndex(currentIndex - 1)}>
             <Text style={styles.arrow}>{"<"}</Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => {
-              const nextIndex = (currentIndex + 1) % images.length;
-              setCurrentIndex(nextIndex);
-              scrollRef.current?.scrollTo({
-                x: nextIndex * (slideWidth + spacing),
-                animated: true,
-              });
-            }}
-          >
+          <TouchableOpacity onPress={() => scrollToIndex(currentIndex + 1)}>
             <Text style={styles.arrow}>{">"}</Text>
           </TouchableOpacity>
         </View>
       )}
+
       {dotpagination && (
         <View style={styles.dotsContainer}>
           {images.map((_, idx) => (
@@ -122,6 +140,7 @@ const ImageSliderComponent: React.FC<ImageSliderProps> = ({
           ))}
         </View>
       )}
+
       {numberpagination && (
         <View style={styles.numbersContainer}>
           {images.map((_, idx) => (
@@ -152,14 +171,11 @@ export default ImageSliderComponent;
 
 const styles = StyleSheet.create({
   container: {
-    height: 250,
     position: "relative",
   },
   image: {
     width: "100%",
-    height: 250,
-    borderRadius: 12,
-    resizeMode: "cover",
+    aspectRatio: 430 / 224,
   },
   dotsContainer: {
     position: "absolute",
@@ -190,13 +206,13 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: "rgba(128,128,128,0.4)", // pasif sayı rengi
+    backgroundColor: "rgba(128,128,128,0.4)",
     justifyContent: "center",
     alignItems: "center",
     marginHorizontal: 4,
   },
   activeNumber: {
-    backgroundColor: "#fff", // aktif sayı rengi
+    backgroundColor: "#fff",
     borderWidth: 2,
     borderColor: "rgba(128,128,128,0.4)",
   },
@@ -206,7 +222,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   activeNumberText: {
-    color: "rgba(128,128,128,0.4)", // aktif sayı metni rengi
+    color: "rgba(128,128,128,0.4)",
   },
   arrowsButtonContainer: {
     position: "absolute",
@@ -228,5 +244,19 @@ const styles = StyleSheet.create({
     borderColor: "#fff",
     borderRadius: 20,
     top: "50%",
+  },
+  indexCounterContainer: {
+    position: "absolute",
+    bottom: 10,
+    alignSelf: "center",
+    backgroundColor: "rgba(0,0,0,0.5)",
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  indexCounterText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 14,
   },
 });
