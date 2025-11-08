@@ -23,6 +23,7 @@ interface ImageSliderProps {
   numberpagination?: boolean;
   haveArrows?: boolean;
   showIndexCounter?: boolean;
+  aspectRatio?: string;
 }
 
 const { width } = Dimensions.get("window");
@@ -36,6 +37,7 @@ const ImageSliderComponent: React.FC<ImageSliderProps> = ({
   numberpagination,
   haveArrows,
   showIndexCounter = false,
+  aspectRatio = "430 / 224",
 }) => {
   const scrollRef = useRef<ScrollView>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -98,9 +100,11 @@ const ImageSliderComponent: React.FC<ImageSliderProps> = ({
       >
         {loopImages.map((img, idx) => (
           <View key={idx} style={{ width: slideWidth, marginRight: spacing }}>
-            <Image source={{ uri: img.images }} style={styles.image} />
+            <Image
+              source={{ uri: img.images }}
+              style={[styles.image, { aspectRatio }]}
+            />
             {/* <Image source={require(img.images)} style={styles.image} /> */}
-
             {/* <Image
               source={require('../assets/430x224.png')}
               style={styles.image}
@@ -175,7 +179,6 @@ const styles = StyleSheet.create({
   },
   image: {
     width: "100%",
-    aspectRatio: 430 / 224,
   },
   dotsContainer: {
     position: "absolute",
