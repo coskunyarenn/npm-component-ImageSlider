@@ -50,6 +50,7 @@ const ImageSliderComponent: React.FC<ImageSliderProps> = ({
   const [initialModalIndex, setInitialModalIndex] = useState(0);
   const modalScrollRef = useRef<ScrollView>(null);
   const [modalCurrentIndex, setModalCurrentIndex] = useState(0);
+  const [isZoomed, setIsZoomed] = useState(false);
 
   const loopImages =
     images.length > 1
@@ -270,12 +271,14 @@ const ImageSliderComponent: React.FC<ImageSliderProps> = ({
               pagingEnabled
               showsHorizontalScrollIndicator={false}
               onMomentumScrollEnd={onModalMomentumScrollEnd}
+              scrollEnabled={!isZoomed}
             >
               {loopImages.map((img, idx) => (
                 <View key={idx} style={styles.modalImageContainer}>
                   <ZoomableImage
                     uri={img.images}
                     aspectRatio={parsedAspectRatio}
+                    onZoomChange={setIsZoomed}
                   />
                 </View>
               ))}
