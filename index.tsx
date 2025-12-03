@@ -11,16 +11,8 @@ import {
   NativeScrollEvent,
   Modal,
 } from "react-native";
-import {
-  Gesture,
-  GestureDetector,
-  GestureHandlerRootView,
-} from "react-native-gesture-handler";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-} from "react-native-reanimated";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import ZoomableImage from "./ZoomableImage";
 
 interface ImageItem {
   id: number;
@@ -39,10 +31,8 @@ interface ImageSliderProps {
 }
 
 const { width } = Dimensions.get("window");
-
 const mainSlideWidth = width * 1;
 const mainSpacing = 16;
-
 
 const ImageSliderComponent: React.FC<ImageSliderProps> = ({
   images,
@@ -61,7 +51,13 @@ const ImageSliderComponent: React.FC<ImageSliderProps> = ({
   const modalScrollRef = useRef<ScrollView>(null);
   const [modalCurrentIndex, setModalCurrentIndex] = useState(0);
 
-  const loopImages = images.length > 1 ? [images[images.length - 1], ...images, images[0]] : images;
+  const loopImages =
+    images.length > 1
+      ? [images[images.length - 1], ...images, images[0]]
+      : images;
+
+  const parsedAspectRatio =
+    parseInt(aspectRatio.split("/")[0]) / parseInt(aspectRatio.split("/")[1]);
 
   const openModalAtIndex = (index: number) => {
     setInitialModalIndex(index);
@@ -80,10 +76,12 @@ const ImageSliderComponent: React.FC<ImageSliderProps> = ({
 
   useEffect(() => {
     if (images.length > 1) {
-      scrollRef.current?.scrollTo({ x: mainSlideWidth + mainSpacing, animated: false });
+      scrollRef.current?.scrollTo({
+        x: mainSlideWidth + mainSpacing,
+        animated: false,
+      });
     }
   }, [images]);
-
 
   useEffect(() => {
     if (!autoPlay || images.length <= 1) return;
@@ -93,7 +91,6 @@ const ImageSliderComponent: React.FC<ImageSliderProps> = ({
     }, 5000);
     return () => clearInterval(interval);
   }, [autoPlay, currentIndex, images.length]);
-
 
   const scrollToIndex = (index: number) => {
     if (images.length <= 1) return;
@@ -112,10 +109,16 @@ const ImageSliderComponent: React.FC<ImageSliderProps> = ({
 
     if (index < 0) {
       index = images.length - 1;
-      scrollRef.current?.scrollTo({ x: (images.length) * (mainSlideWidth + mainSpacing), animated: false });
+      scrollRef.current?.scrollTo({
+        x: images.length * (mainSlideWidth + mainSpacing),
+        animated: false,
+      });
     } else if (index >= images.length) {
       index = 0;
-      scrollRef.current?.scrollTo({ x: mainSlideWidth + mainSpacing, animated: false });
+      scrollRef.current?.scrollTo({
+        x: mainSlideWidth + mainSpacing,
+        animated: false,
+      });
     }
     setCurrentIndex(index);
   };
@@ -127,22 +130,25 @@ const ImageSliderComponent: React.FC<ImageSliderProps> = ({
     }
   }, [zoomModalVisible]);
 
-  const onModalMomentumScrollEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+  const onModalMomentumScrollEnd = (
+    e: NativeSyntheticEvent<NativeScrollEvent>
+  ) => {
     if (images.length <= 1) return;
     const offsetX = e.nativeEvent.contentOffset.x;
     let index = Math.round(offsetX / width) - 1;
 
     if (index < 0) {
       index = images.length - 1;
-      modalScrollRef.current?.scrollTo({ x: images.length * width, animated: false });
+      modalScrollRef.current?.scrollTo({
+        x: images.length * width,
+        animated: false,
+      });
     } else if (index >= images.length) {
       index = 0;
       modalScrollRef.current?.scrollTo({ x: width, animated: false });
     }
     setModalCurrentIndex(index);
   };
-
-  const parsedAspectRatio = parseInt(aspectRatio.split('/')[0]) / parseInt(aspectRatio.split('/')[1]);
 
   return (
     <>
@@ -154,26 +160,41 @@ const ImageSliderComponent: React.FC<ImageSliderProps> = ({
           snapToInterval={mainSlideWidth + mainSpacing}
           decelerationRate="fast"
           onMomentumScrollEnd={onMomentumScrollEnd}
-          contentContainerStyle={{ paddingHorizontal: (width - mainSlideWidth) / 2 }}
+          contentContainerStyle={{
+            paddingHorizontal: (width - mainSlideWidth) / 2,
+          }}
         >
           {loopImages.map((img, idx) => {
-            const realIndex = images.length > 1 ? (idx - 1 + images.length) % images.length : 0;
+            const realIndex =
+              images.length > 1 ? (idx - 1 + images.length) % images.length : 0;
             return (
-              <View key={idx} style={{ width: mainSlideWidth, marginRight: mainSpacing }}>
+              <View
+                key={idx}
+                style={{ width: mainSlideWidth, marginRight: mainSpacing }}
+              >
                 {isActiveZooming ? (
                   <TouchableOpacity onPress={() => openModalAtIndex(realIndex)}>
-                    <Image source={{ uri: img.images }} style={[styles.image, { aspectRatio: parsedAspectRatio }]} />
+                    <Image
+                      source={{ uri: img.images }}
+                      style={[styles.image, { aspectRatio: parsedAspectRatio }]}
+                    />
                   </TouchableOpacity>
                 ) : (
-                  <Image source={{ uri: img.images }} style={[styles.image, { aspectRatio: parsedAspectRatio }]} />
+                  <Image
+                    source={{ uri: img.images }}
+                    style={[styles.image, { aspectRatio: parsedAspectRatio }]}
+                  />
                 )}
               </View>
             );
           })}
         </ScrollView>
+
         {showIndexCounter && (
           <View style={styles.indexCounterContainer}>
-            <Text style={styles.indexCounterText}>{currentIndex + 1} / {images.length}</Text>
+            <Text style={styles.indexCounterText}>
+              {currentIndex + 1} / {images.length}
+            </Text>
           </View>
         )}
 
@@ -226,56 +247,47 @@ const ImageSliderComponent: React.FC<ImageSliderProps> = ({
         )}
       </View>
 
-      <Modal visible={zoomModalVisible} transparent={false} animationType="slide" onRequestClose={closeModal}>
+      {/* Zoom Modal */}
+      <Modal
+        visible={zoomModalVisible}
+        transparent={false}
+        animationType="slide"
+        onRequestClose={closeModal}
+      >
         <GestureHandlerRootView style={{ flex: 1 }}>
           <View style={styles.modalContainer}>
-            <TouchableOpacity onPress={closeModal} style={styles.modalCloseButton}>
+            <TouchableOpacity
+              onPress={closeModal}
+              style={styles.modalCloseButton}
+            >
               <Text style={styles.modalCloseButtonText}>Kapat</Text>
             </TouchableOpacity>
 
             <ScrollView
               ref={modalScrollRef}
               horizontal
-              nestedScrollEnabled={true}
+              nestedScrollEnabled
               pagingEnabled
               showsHorizontalScrollIndicator={false}
               onMomentumScrollEnd={onModalMomentumScrollEnd}
             >
-              {loopImages.map((img, idx) => {
-                const imageScale = useSharedValue(1);
-
-                const imageAnimatedStyle = useAnimatedStyle(() => ({
-                  transform: [{ scale: imageScale.value }],
-                }));
-
-                const imagePinchGesture = Gesture.Pinch()
-                  .onUpdate((e) => {
-                    imageScale.value = e.scale;
-                  })
-                  .onEnd(() => {
-                    imageScale.value = withTiming(1, { duration: 300 });
-                  });
-                return (
-                  <View key={idx} style={styles.modalImageContainer}>
-                    <GestureDetector gesture={imagePinchGesture}>
-                      <Animated.View style={imageAnimatedStyle}>
-                        <Image
-                          source={{ uri: img.images }}
-                          style={[styles.image, { aspectRatio: parsedAspectRatio }]}
-                          resizeMode="contain"
-                        />
-                      </Animated.View>
-                    </GestureDetector>
-                  </View>
-                )
-              })}
+              {loopImages.map((img, idx) => (
+                <View key={idx} style={styles.modalImageContainer}>
+                  <ZoomableImage
+                    uri={img.images}
+                    aspectRatio={parsedAspectRatio}
+                  />
+                </View>
+              ))}
             </ScrollView>
+
             {showIndexCounter && (
               <View style={styles.modalIndexCounter}>
-                <Text style={styles.indexCounterText}>{modalCurrentIndex + 1} / {images.length}</Text>
+                <Text style={styles.indexCounterText}>
+                  {modalCurrentIndex + 1} / {images.length}
+                </Text>
               </View>
             )}
-
           </View>
         </GestureHandlerRootView>
       </Modal>
@@ -286,12 +298,8 @@ const ImageSliderComponent: React.FC<ImageSliderProps> = ({
 export default ImageSliderComponent;
 
 const styles = StyleSheet.create({
-  container: {
-    position: "relative",
-  },
-  image: {
-    width: "100%",
-  },
+  container: { position: "relative" },
+  image: { width: "100%" },
   dotsContainer: {
     position: "absolute",
     bottom: -10,
@@ -306,9 +314,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#888",
     marginHorizontal: 4,
   },
-  activeDot: {
-    backgroundColor: "#FFFFFF",
-  },
+  activeDot: { backgroundColor: "#fff" },
   numbersContainer: {
     position: "absolute",
     bottom: -50,
@@ -331,14 +337,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(128,128,128,0.4)",
   },
-  numberText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 14,
-  },
-  activeNumberText: {
-    color: "rgba(128,128,128,0.4)",
-  },
+  numberText: { color: "#fff", fontWeight: "bold", fontSize: 14 },
+  activeNumberText: { color: "rgba(128,128,128,0.4)" },
   arrowsButtonContainer: {
     position: "absolute",
     justifyContent: "space-between",
@@ -369,36 +369,21 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 12,
   },
-  indexCounterText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 14,
-  },
-  // Modal için stiller
-  modalContainer: {
-    flex: 1,
-    backgroundColor: 'black'
-  },
+  indexCounterText: { color: "#fff", fontWeight: "bold", fontSize: 14 },
+  modalContainer: { flex: 1, backgroundColor: "black" },
   modalCloseButton: {
-    position: 'absolute',
+    position: "absolute",
     top: 15,
     right: 15,
     zIndex: 10,
-    padding: 10
+    padding: 10,
   },
-  modalCloseButtonText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold'
-  },
+  modalCloseButtonText: { color: "white", fontSize: 18, fontWeight: "bold" },
   modalImageContainer: {
     width: width,
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
-  modalImage: {
-    width: '100%',
+    height: "100%",
+    justifyContent: "center",
+    alignItems: "center",
   },
   modalIndexCounter: {
     position: "absolute",
