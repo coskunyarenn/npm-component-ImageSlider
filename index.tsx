@@ -381,7 +381,12 @@ const styles = StyleSheet.create({
     zIndex: 10,
     padding: 10,
   },
-  modalCloseButtonText: { color: "white", fontSize: 18, fontWeight: "bold" },
+  modalCloseButtonText: {
+    color: "white",
+    fontSize: 18,
+    fontWeight: "bold",
+    paddingTop: 35,
+  },
   modalImageContainer: {
     width: width,
     height: "100%",
