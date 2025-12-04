@@ -171,7 +171,11 @@ const ImageSliderComponent: React.FC<ImageSliderProps> = ({
             return (
               <View
                 key={idx}
-                style={{ width: mainSlideWidth, marginRight: mainSpacing }}
+                style={{
+                  width: mainSlideWidth,
+                  marginRight: mainSpacing,
+                  overflow: "hidden",
+                }}
               >
                 {isActiveZooming ? (
                   <TouchableOpacity onPress={() => openModalAtIndex(realIndex)}>
@@ -271,14 +275,14 @@ const ImageSliderComponent: React.FC<ImageSliderProps> = ({
               pagingEnabled
               showsHorizontalScrollIndicator={false}
               onMomentumScrollEnd={onModalMomentumScrollEnd}
-              scrollEnabled={!isZoomed}
+              // scrollEnabled={!isZoomed}
             >
               {loopImages.map((img, idx) => (
                 <View key={idx} style={styles.modalImageContainer}>
                   <ZoomableImage
                     uri={img.images}
                     aspectRatio={parsedAspectRatio}
-                    onZoomChange={setIsZoomed}
+                    // onZoomChange={setIsZoomed}
                   />
                 </View>
               ))}
@@ -392,6 +396,7 @@ const styles = StyleSheet.create({
     height: "100%",
     justifyContent: "center",
     alignItems: "center",
+    overflow: "hidden",
   },
   modalIndexCounter: {
     position: "absolute",
