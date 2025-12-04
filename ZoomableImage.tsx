@@ -5,6 +5,7 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   runOnJS,
+  withTiming,
 } from "react-native-reanimated";
 
 interface ZoomableImageProps {
@@ -22,25 +23,38 @@ const ZoomableImage: React.FC<ZoomableImageProps> = ({
 }) => {
   const scale = useSharedValue(1);
 
+  const MIN_SCALE = 1;
+  const MAX_SCALE = 3;
+
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
   }));
 
-  const MIN_SCALE = 1; // never smaller than default
-  const MAX_SCALE = 3; // optional max zoom
-
+  // 🔍 Pinch Zoom
   const pinchGesture = Gesture.Pinch().onUpdate((e) => {
     let newScale = e.scale;
-    // Clamp the scale between MIN_SCALE and MAX_SCALE
+
     if (newScale < MIN_SCALE) newScale = MIN_SCALE;
     if (newScale > MAX_SCALE) newScale = MAX_SCALE;
 
     scale.value = newScale;
 
-    if (onZoomChange) {
-      runOnJS(onZoomChange)(scale.value > 1);
-    }
+    if (onZoomChange) runOnJS(onZoomChange)(scale.value > 1);
   });
+
+  const doubleTapGesture = Gesture.Tap()
+    .numberOfTaps(2)
+    .onStart(() => {
+      const targetScale = scale.value > 1 ? 1 : 2.5;
+
+      scale.value = withTiming(targetScale, { duration: 250 });
+
+      if (onZoomChange) {
+        runOnJS(onZoomChange)(targetScale > 1);
+      }
+    });
+
+  const composedGesture = Gesture.Simultaneous(pinchGesture, doubleTapGesture);
 
   return (
     <View
@@ -51,7 +65,7 @@ const ZoomableImage: React.FC<ZoomableImageProps> = ({
         justifyContent: "center",
       }}
     >
-      <GestureDetector gesture={pinchGesture}>
+      <GestureDetector gesture={composedGesture}>
         <Animated.View style={animatedStyle}>
           <Image
             source={{ uri }}
